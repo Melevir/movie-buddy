@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "movie-buddy"
-version = "0.1.0"
+version = "0.2.0"
 description = "CLI tool to open a random episode of a series on kino.pub"
 requires-python = ">=3.13"
 dependencies = [
