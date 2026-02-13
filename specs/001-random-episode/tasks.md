@@ -96,18 +96,18 @@
 
 ### Tests (write FIRST, verify they FAIL)
 
-- [ ] T029 [P] [US2] Write tests for KinoPubClient.get_watching_serials and get_watching_movies in `tests/test_api.py`: returns list[WatchingItem]. Use fixture `tests/fixtures/watching_serials.json`
-- [ ] T030 [P] [US2] Write tests for KinoPubClient.get_bookmark_folders and get_bookmark_items in `tests/test_api.py`: returns folders list and item IDs. Use fixture `tests/fixtures/bookmarks.json`
-- [ ] T031 [P] [US2] Write tests for match ranking logic in `tests/test_cli.py`: (a) single search result → auto-select, (b) one result in watching list → auto-select with message, (c) one result in bookmarks → auto-select, (d) no activity match → return top 5 for picker, (e) 0 results → error message
+- [x] T029 [P] [US2] Write tests for KinoPubClient.get_watching_serials and get_watching_movies in `tests/test_api.py`: returns list[WatchingItem]. Use fixture `tests/fixtures/watching_serials.json`
+- [x] T030 [P] [US2] Write tests for KinoPubClient.get_bookmark_folders and get_bookmark_items in `tests/test_api.py`: returns folders list and item IDs. Use fixture `tests/fixtures/bookmarks.json`
+- [x] T031 [P] [US2] Write tests for match ranking logic in `tests/test_cli.py`: (a) single search result → auto-select, (b) one result in watching list → auto-select with message, (c) one result in bookmarks → auto-select, (d) no activity match → return top 5 for picker, (e) 0 results → error message
 
 ### Implementation
 
-- [ ] T032 [US2] Create WatchingItem and BookmarkFolder dataclasses in `movie_buddy/models.py` per data-model.md
-- [ ] T033 [US2] Create fixtures `tests/fixtures/watching_serials.json`, `tests/fixtures/watching_movies.json`, `tests/fixtures/bookmarks.json`, `tests/fixtures/bookmark_items.json` with recorded API structures
-- [ ] T034 [US2] Implement `get_watching_serials()`, `get_watching_movies()`, `get_bookmark_folders()`, `get_bookmark_items(folder_id)` in `movie_buddy/api.py`
-- [ ] T035 [US2] Implement match ranking function in `movie_buddy/cli.py` (or extract to helper): fetch watching + bookmarks, cross-reference search result IDs, return auto-selected Content or top-5 list
-- [ ] T036 [US2] Update `watch` command in `movie_buddy/cli.py`: integrate ranking logic. If auto-selected, print "Auto-selected: {title} (in your watching list)". If top-5, display Rich numbered table and prompt for selection (1-5). Show Rich progress spinner during API calls (FR-008)
-- [ ] T037 [US2] Verify all tests pass, `ruff check .`, `ruff format --check .`, `mypy movie_buddy` all green
+- [x] T032 [US2] Create WatchingItem and BookmarkFolder dataclasses in `movie_buddy/models.py` per data-model.md
+- [x] T033 [US2] Create fixtures `tests/fixtures/watching_serials.json`, `tests/fixtures/watching_movies.json`, `tests/fixtures/bookmarks.json`, `tests/fixtures/bookmark_items.json` with recorded API structures
+- [x] T034 [US2] Implement `get_watching_serials()`, `get_watching_movies()`, `get_bookmark_folders()`, `get_bookmark_items(folder_id)` in `movie_buddy/api.py`
+- [x] T035 [US2] Implement match ranking function in `movie_buddy/matcher.py`: fetch watching + bookmarks, cross-reference search result IDs, return auto-selected Content or top-5 list
+- [x] T036 [US2] Update `watch` command in `movie_buddy/cli.py`: integrate ranking logic. If auto-selected, print "Auto-selected: {title} (in your watching list)". If top-5, display Rich numbered table and prompt for selection (1-5). Show Rich progress spinner during API calls (FR-008)
+- [x] T037 [US2] Verify all tests pass, `ruff check .`, `ruff format --check .`, `mypy movie_buddy` all green
 
 **Checkpoint**: `python -m movie_buddy watch "Friends"` auto-selects from watching list or shows picker. `python -m movie_buddy watch "xyznonexistent"` shows helpful error.
 
