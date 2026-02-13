@@ -70,11 +70,20 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
     "S101",   # assert allowed in tests
+    "S311",   # pseudo-random is fine in tests (not crypto)
     "ARG",    # unused fixture args are normal in pytest
     "FBT",    # boolean positional args fine in tests
+    "PLC0415", # deferred imports fine in tests
 ]
 "movie_buddy/cli.py" = [
     "FBT",    # boolean options are idiomatic in typer/click
+]
+"movie_buddy/browser.py" = [
+    "S603",   # subprocess calls are intentional (opening Chrome)
+    "S607",   # partial path is intentional (open, google-chrome)
+]
+"movie_buddy/models.py" = [
+    "PLC0415", # deferred import to avoid circular dependency with config
 ]
 
 [tool.mypy]
