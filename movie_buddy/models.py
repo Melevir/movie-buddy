@@ -56,3 +56,39 @@ class DeviceCode:
     verification_uri: str
     interval: int
     expires_in: int
+
+
+@dataclass
+class Episode:
+    id: int
+    number: int
+    title: str
+    season_number: int
+
+
+@dataclass
+class Season:
+    number: int
+    episodes: list[Episode]
+
+
+@dataclass
+class Content:
+    id: int
+    title: str
+    content_type: str
+    year: int
+    seasons: list[Season]
+
+    @property
+    def all_episodes(self) -> list[Episode]:
+        return [ep for season in self.seasons for ep in season.episodes]
+
+    def build_watch_url(self, episode: Episode | None = None) -> str:
+        from movie_buddy.config import config
+
+        if self.content_type == "movie" or episode is None:
+            return f"{config.web_base_url}/{self.id}"
+        return (
+            f"{config.web_base_url}/{self.id}/s{episode.season_number}e{episode.number}"
+        )

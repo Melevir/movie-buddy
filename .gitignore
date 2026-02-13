@@ -39,3 +39,4 @@ token.bin
 .env
 .env.*
 !.env.example
+.agents/

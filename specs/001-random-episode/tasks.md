@@ -66,21 +66,21 @@
 
 ### Tests (write FIRST, verify they FAIL)
 
-- [ ] T017 [P] [US1] Write tests for Content, Season, Episode models in `tests/test_models.py`: construction, URL generation (`build_watch_url` returns correct `/item/view/{id}/s{S}e{E}` pattern)
-- [ ] T018 [P] [US1] Write tests for KinoPubClient.search in `tests/test_api.py`: successful search returns list[Content], empty results returns [], filters by supported types. Use pytest-httpx with fixture `tests/fixtures/search_friends.json`
-- [ ] T019 [P] [US1] Write tests for KinoPubClient.get_item in `tests/test_api.py`: returns Content with populated seasons/episodes, uses nolinks=1. Use fixture `tests/fixtures/item_8894.json`
-- [ ] T020 [P] [US1] Write tests for random episode selection in `tests/test_cli.py`: selection covers all seasons (statistical test — run N times, verify episodes from multiple seasons appear), single-episode series returns that episode
-- [ ] T021 [P] [US1] Write tests for browser opening in `tests/test_browser.py`: `open_in_chrome` calls subprocess with correct args on macOS, raises error if Chrome not found (mock subprocess)
+- [x] T017 [P] [US1] Write tests for Content, Season, Episode models in `tests/test_models.py`: construction, URL generation (`build_watch_url` returns correct `/item/view/{id}/s{S}e{E}` pattern)
+- [x] T018 [P] [US1] Write tests for KinoPubClient.search in `tests/test_api.py`: successful search returns list[Content], empty results returns [], filters by supported types. Use pytest-httpx with fixture `tests/fixtures/search_friends.json`
+- [x] T019 [P] [US1] Write tests for KinoPubClient.get_item in `tests/test_api.py`: returns Content with populated seasons/episodes, uses nolinks=1. Use fixture `tests/fixtures/item_8894.json`
+- [x] T020 [P] [US1] Write tests for random episode selection in `tests/test_cli.py`: selection covers all seasons (statistical test — run N times, verify episodes from multiple seasons appear), single-episode series returns that episode
+- [x] T021 [P] [US1] Write tests for browser opening in `tests/test_browser.py`: `open_in_chrome` calls subprocess with correct args on macOS, raises error if Chrome not found (mock subprocess)
 
 ### Implementation
 
-- [ ] T022 [US1] Create Content, Season, Episode dataclasses in `movie_buddy/models.py` with fields per data-model.md. Add `build_watch_url()` method to Content that constructs the kino.pub web URL
-- [ ] T023 [US1] Create `tests/fixtures/search_friends.json` and `tests/fixtures/item_8894.json` with recorded API response structures (from api-research.md examples)
-- [ ] T024 [US1] Implement KinoPubClient class in `movie_buddy/api.py`: constructor takes Token, creates httpx.Client with Bearer auth header and base_url. Implement `search(query)` method: GET /v1/items/search?q={query}&type=serial,movie,tvshow, parse response into list[Content]
-- [ ] T025 [US1] Implement `get_item(item_id)` in `movie_buddy/api.py`: GET /v1/items/{id}?nolinks=1, parse response into Content with nested Season/Episode lists
-- [ ] T026 [US1] Implement `open_in_chrome(url)` in `movie_buddy/browser.py`: use subprocess to run `open -a "Google Chrome" {url}` on macOS. Detect platform for Linux variant (`google-chrome` / `chromium`). Raise descriptive error if Chrome not found
-- [ ] T027 [US1] Implement `watch` command in `movie_buddy/cli.py`: ensure_valid_token → search → if 1 result use it → get_item → flatten episodes → random.choice → print Rich panel (title, S##E##, episode title) → open_in_chrome. For 0 results: print error. For multiple results: for now just use first result (disambiguation comes in US2)
-- [ ] T028 [US1] Verify all tests pass, `ruff check .`, `ruff format --check .`, `mypy movie_buddy` all green
+- [x] T022 [US1] Create Content, Season, Episode dataclasses in `movie_buddy/models.py` with fields per data-model.md. Add `build_watch_url()` method to Content that constructs the kino.pub web URL
+- [x] T023 [US1] Create `tests/fixtures/search_friends.json` and `tests/fixtures/item_8894.json` with recorded API response structures (from api-research.md examples)
+- [x] T024 [US1] Implement KinoPubClient class in `movie_buddy/api.py`: constructor takes Token, creates httpx.Client with Bearer auth header and base_url. Implement `search(query)` method: GET /v1/items/search?q={query}&type=serial,movie,tvshow, parse response into list[Content]
+- [x] T025 [US1] Implement `get_item(item_id)` in `movie_buddy/api.py`: GET /v1/items/{id}?nolinks=1, parse response into Content with nested Season/Episode lists
+- [x] T026 [US1] Implement `open_in_chrome(url)` in `movie_buddy/browser.py`: use subprocess to run `open -a "Google Chrome" {url}` on macOS. Detect platform for Linux variant (`google-chrome` / `chromium`). Raise descriptive error if Chrome not found
+- [x] T027 [US1] Implement `watch` command in `movie_buddy/cli.py`: ensure_valid_token → search → if 1 result use it → get_item → flatten episodes → random.choice → print Rich panel (title, S##E##, episode title) → open_in_chrome. For 0 results: print error. For multiple results: for now just use first result (disambiguation comes in US2)
+- [x] T028 [US1] Verify all tests pass, `ruff check .`, `ruff format --check .`, `mypy movie_buddy` all green
 
 **Checkpoint**: `python -m movie_buddy watch "Breaking Bad"` opens random episode in Chrome. Single-result searches work end-to-end.
 
