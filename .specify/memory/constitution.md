@@ -96,10 +96,14 @@ interactions turn a utility into a tool users love.
   on failure.
 - **Formatting**: All Python code MUST be formatted with `ruff format`
   and pass `ruff check` with zero warnings before commit.
+- **No secrets in version control**: All API keys, tokens, and
+  credentials MUST be stored in `.env` (which is gitignored). Source
+  files, documentation, fixtures, and config files MUST NOT contain
+  secret values. Use `.env.example` with empty placeholders only.
 
 ## Technical Constraints
 
-- **Language**: Python 3.12+
+- **Language**: Python 3.14
 - **CLI framework**: Typer or Click (TBD during planning)
 - **Output formatting**: Rich
 - **API integration**: kino.pub API via `httpx` (async-capable)
@@ -107,6 +111,7 @@ interactions turn a utility into a tool users love.
   ratings
 - **Testing**: pytest with pytest-httpx for API fixture recording
 - **Linting/Formatting**: ruff
+- **Full static typing**: MyPy with strict mode enabled
 
 ## Governance
 
@@ -125,4 +130,4 @@ architectural decisions MUST comply with the principles above.
   implementation plan MUST include a Constitution Check gate
   verifying alignment with all principles.
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-13 | **Last Amended**: 2026-02-13
+**Version**: 1.1.0 | **Ratified**: 2026-02-13 | **Last Amended**: 2026-02-13
