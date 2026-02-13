@@ -175,3 +175,37 @@ class TestNetworkErrorHandling:
         httpx_mock.add_response(status_code=401)
         with pytest.raises(AuthError, match="expired|auth"):
             client.search("test")
+
+
+class TestCategoryItems:
+    def test_get_category_items_returns_catalog_entries(
+        self, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        data = json.loads((FIXTURES / "items_fresh_movie.json").read_text())
+        httpx_mock.add_response(
+            url=f"{config.api_base_url}/items/fresh?type=movie&perpage=50",
+            json=data,
+        )
+        entries = client.get_category_items("fresh", "movie")
+        assert len(entries) == 2
+        assert entries[0].id == 501
+        assert entries[0].title == "Новый фильм / New Movie"
+        assert entries[0].year == 2026
+        assert entries[0].content_type == "movie"
+        assert entries[0].genres == ["Драма", "Триллер"]
+        assert entries[0].countries == ["США"]
+        assert entries[0].imdb_rating == 7.5
+        assert entries[0].kinopoisk_rating == 7.2
+        assert entries[0].plot == "A thrilling new movie about unexpected events."
+
+    def test_get_category_items_handles_null_ratings(
+        self, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        data = json.loads((FIXTURES / "items_fresh_movie.json").read_text())
+        httpx_mock.add_response(
+            url=f"{config.api_base_url}/items/fresh?type=movie&perpage=50",
+            json=data,
+        )
+        entries = client.get_category_items("fresh", "movie")
+        assert entries[1].kinopoisk_rating is None
+        assert entries[1].imdb_rating == 6.8

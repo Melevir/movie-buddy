@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -9,6 +10,7 @@ from movie_buddy.config import config as default_config
 from movie_buddy.models import (
     AuthError,
     BookmarkFolder,
+    CatalogEntry,
     Content,
     Episode,
     NetworkError,
@@ -141,3 +143,31 @@ class KinoPubClient:
     def get_bookmark_items(self, folder_id: int) -> list[int]:
         response = self._request("GET", f"/bookmarks/{folder_id}")
         return [item["id"] for item in response.json().get("items", [])]
+
+    def get_category_items(
+        self,
+        category: str,
+        content_type: str,
+        per_page: int = 50,
+    ) -> list[CatalogEntry]:
+        response = self._request(
+            "GET",
+            f"/items/{category}",
+            params={"type": content_type, "perpage": str(per_page)},
+        )
+        now = datetime.datetime.now(tz=datetime.UTC).isoformat()
+        return [
+            CatalogEntry(
+                id=item["id"],
+                title=item["title"],
+                year=item.get("year", 0),
+                content_type=item["type"],
+                genres=[g["title"] for g in item.get("genres", [])],
+                countries=[c["title"] for c in item.get("countries", [])],
+                imdb_rating=item.get("imdb_rating"),
+                kinopoisk_rating=item.get("kinopoisk_rating"),
+                plot=item.get("plot", ""),
+                created_at=now,
+            )
+            for item in response.json().get("items", [])
+        ]

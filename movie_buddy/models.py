@@ -107,3 +107,35 @@ class WatchingItem:
 class BookmarkFolder:
     id: int
     title: str
+
+
+@dataclass
+class CatalogEntry:
+    id: int
+    title: str
+    year: int
+    content_type: str
+    genres: list[str]
+    countries: list[str]
+    imdb_rating: float | None
+    kinopoisk_rating: float | None
+    plot: str
+    created_at: str
+
+
+@dataclass
+class Rating:
+    content_id: int
+    title: str
+    content_type: str
+    score: int
+    rated_at: str
+
+
+@dataclass
+class Recommendation:
+    content_id: int
+    title: str
+    year: int
+    content_type: str
+    explanation: str
