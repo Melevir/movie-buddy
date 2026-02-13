@@ -48,6 +48,9 @@ class TursoStorage:
             auth_token=c.turso_auth_token or "",
         )
 
+    def close(self) -> None:
+        self._client.close()
+
     def init_schema(self) -> None:
         self._client.execute(_SCHEMA_CATALOG)
         self._client.execute(_SCHEMA_RATINGS)

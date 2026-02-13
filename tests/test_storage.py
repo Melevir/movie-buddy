@@ -23,7 +23,8 @@ def storage(tmp_db: str):
     store = TursoStorage.__new__(TursoStorage)
     store._client = libsql_client.create_client_sync(url=tmp_db)
     store.init_schema()
-    return store
+    yield store
+    store.close()
 
 
 class TestConfigValidation:
