@@ -121,15 +121,15 @@
 
 ### Tests (write FIRST, verify they FAIL)
 
-- [ ] T038 [P] [US3] Write tests for movie handling in `tests/test_cli.py`: (a) movie selected → opens `https://kino.pub/item/view/{id}` (no /s/e suffix), (b) mixed movie+series results → both appear in picker with type labels
-- [ ] T039 [P] [US3] Write test for Content.build_watch_url for movie type in `tests/test_models.py`: returns URL without season/episode suffix
+- [x] T038 [P] [US3] Write tests for movie handling in `tests/test_cli.py`: (a) movie selected → opens `https://kino.pub/item/view/{id}` (no /s/e suffix), (b) mixed movie+series results → both appear in picker with type labels
+- [x] T039 [P] [US3] Write test for Content.build_watch_url for movie type in `tests/test_models.py`: returns URL without season/episode suffix
 
 ### Implementation
 
-- [ ] T040 [US3] Update Content.build_watch_url in `movie_buddy/models.py` to handle movie type: return `https://kino.pub/item/view/{id}` without episode path. Ensure series/tvshow path still works
-- [ ] T041 [US3] Update `watch` command in `movie_buddy/cli.py`: if selected content is movie, skip episode selection, build movie URL directly, print Rich panel with title+year, open in Chrome. Add type label (Movie/Series/TV Show) to picker display
-- [ ] T042 [US3] Create fixture `tests/fixtures/item_113_movie.json` (Matrix movie response) for movie detail tests
-- [ ] T043 [US3] Verify all tests pass, `ruff check .`, `ruff format --check .`, `mypy movie_buddy` all green
+- [x] T040 [US3] Update Content.build_watch_url in `movie_buddy/models.py` to handle movie type: return `https://kino.pub/item/view/{id}` without episode path. Ensure series/tvshow path still works
+- [x] T041 [US3] Update `watch` command in `movie_buddy/cli.py`: if selected content is movie, skip episode selection, build movie URL directly, print Rich panel with title+year, open in Chrome. Add type label (Movie/Series/TV Show) to picker display
+- [x] T042 [US3] Create fixture `tests/fixtures/item_113_movie.json` (Matrix movie response) for movie detail tests
+- [x] T043 [US3] Verify all tests pass, `ruff check .`, `ruff format --check .`, `mypy movie_buddy` all green
 
 **Checkpoint**: Movies and series both work. Type labels shown in multi-result picker.
 
@@ -143,18 +143,18 @@
 
 ### Tests (write FIRST, verify they FAIL)
 
-- [ ] T044 [P] Write tests for network error handling in `tests/test_api.py`: httpx.ConnectError → NetworkError, httpx.TimeoutException → NetworkError with timeout message, HTTP 429 → retry then RateLimitError, HTTP 401 → triggers token refresh
-- [ ] T045 [P] Write tests for Chrome-not-found in `tests/test_browser.py`: subprocess fails with FileNotFoundError → user-friendly error message mentioning Chrome
-- [ ] T046 [P] Write tests for CLI error display in `tests/test_cli.py`: NetworkError → "Unable to reach kino.pub" message, AuthError → "Please run `movie-buddy auth`" message, single-episode series → opens that episode without error
+- [x] T044 [P] Write tests for network error handling in `tests/test_api.py`: httpx.ConnectError → NetworkError, httpx.TimeoutException → NetworkError with timeout message, HTTP 429 → retry then RateLimitError, HTTP 401 → triggers token refresh
+- [x] T045 [P] Write tests for Chrome-not-found in `tests/test_browser.py`: subprocess fails with FileNotFoundError → user-friendly error message mentioning Chrome
+- [x] T046 [P] Write tests for CLI error display in `tests/test_cli.py`: NetworkError → "Unable to reach kino.pub" message, AuthError → "Please run `movie-buddy auth`" message, single-episode series → opens that episode without error
 
 ### Implementation
 
-- [ ] T047 Add network error handling to KinoPubClient in `movie_buddy/api.py`: wrap httpx calls with try/except, convert httpx.ConnectError/TimeoutException to NetworkError, handle 429 with 5s retry (max 2), handle 401 with automatic token refresh
-- [ ] T048 Add Chrome-not-found handling in `movie_buddy/browser.py`: catch subprocess errors, produce actionable error message
-- [ ] T049 Update `movie_buddy/cli.py` error handling: wrap main flow in try/except for KinoPubError subtypes, display Rich-formatted error panels with actionable messages (SC-005). Add TTY detection: if not sys.stdout.isatty(), use plain text output (no Rich markup)
-- [ ] T050 Add Rich progress spinners to all API calls in `movie_buddy/cli.py`: "Searching kino.pub...", "Fetching episode list...", "Checking your watching list..." (FR-008)
-- [ ] T051 Add help text with examples to all Typer commands in `movie_buddy/cli.py`: auth (example flow), watch (example with series name and movie name), per CLI contract
-- [ ] T052 Verify all tests pass, `ruff check .`, `ruff format --check .`, `mypy movie_buddy` all green. Run manual edge case tests from spec
+- [x] T047 Add network error handling to KinoPubClient in `movie_buddy/api.py`: wrap httpx calls with try/except, convert httpx.ConnectError/TimeoutException to NetworkError, handle 429 with 5s retry (max 2), handle 401 with automatic token refresh
+- [x] T048 Add Chrome-not-found handling in `movie_buddy/browser.py`: catch subprocess errors, produce actionable error message
+- [x] T049 Update `movie_buddy/cli.py` error handling: wrap main flow in try/except for KinoPubError subtypes, display Rich-formatted error panels with actionable messages (SC-005). Add TTY detection: if not sys.stdout.isatty(), use plain text output (no Rich markup)
+- [x] T050 Add Rich progress spinners to all API calls in `movie_buddy/cli.py`: "Searching kino.pub...", "Fetching episode list...", "Checking your watching list..." (FR-008)
+- [x] T051 Add help text with examples to all Typer commands in `movie_buddy/cli.py`: auth (example flow), watch (example with series name and movie name), per CLI contract
+- [x] T052 Verify all tests pass, `ruff check .`, `ruff format --check .`, `mypy movie_buddy` all green. Run manual edge case tests from spec
 
 **Checkpoint**: Production-quality CLI. All edge cases handled. Clean output in both TTY and piped modes.
 

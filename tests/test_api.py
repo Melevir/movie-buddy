@@ -1,12 +1,14 @@
 import json
 from pathlib import Path
+from unittest.mock import patch
 
+import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
 from movie_buddy.api import KinoPubClient
 from movie_buddy.config import config
-from movie_buddy.models import Token
+from movie_buddy.models import NetworkError, RateLimitError, Token
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -129,3 +131,47 @@ class TestBookmarks:
         )
         item_ids = client.get_bookmark_items(2576791)
         assert item_ids == [110440, 555]
+
+
+class TestNetworkErrorHandling:
+    def test_connect_error_raises_network_error(
+        self, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        httpx_mock.add_exception(httpx.ConnectError("Connection refused"))
+        with pytest.raises(NetworkError, match="Unable to reach kino.pub"):
+            client.search("test")
+
+    def test_timeout_raises_network_error(
+        self, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        httpx_mock.add_exception(httpx.TimeoutException("Request timed out"))
+        with pytest.raises(NetworkError, match="timed out"):
+            client.search("test")
+
+    @patch("movie_buddy.api.time.sleep")
+    def test_429_raises_rate_limit_error(
+        self, mock_sleep: object, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        httpx_mock.add_response(status_code=429)
+        httpx_mock.add_response(status_code=429)
+        with pytest.raises(RateLimitError):
+            client.search("test")
+
+    @patch("movie_buddy.api.time.sleep")
+    def test_429_retries_then_succeeds(
+        self, mock_sleep: object, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        httpx_mock.add_response(status_code=429)
+        data = json.loads((FIXTURES / "search_empty.json").read_text())
+        httpx_mock.add_response(json=data)
+        results = client.search("test")
+        assert results == []
+
+    def test_401_raises_auth_error(
+        self, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        from movie_buddy.models import AuthError
+
+        httpx_mock.add_response(status_code=401)
+        with pytest.raises(AuthError, match="expired|auth"):
+            client.search("test")

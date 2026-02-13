@@ -35,3 +35,11 @@ class TestOpenInChrome:
             pytest.raises(RuntimeError, match="Chrome"),
         ):
             open_in_chrome("https://kino.pub/item/view/123")
+
+    @patch("movie_buddy.browser.subprocess.run", side_effect=FileNotFoundError)
+    def test_chrome_not_found_message_is_actionable(self, mock_run: object) -> None:
+        with (
+            patch("movie_buddy.browser.sys.platform", "darwin"),
+            pytest.raises(RuntimeError, match="install|Chrome"),
+        ):
+            open_in_chrome("https://kino.pub/item/view/123")
