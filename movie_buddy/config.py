@@ -39,6 +39,15 @@ class Config:
         default_factory=lambda: Path.home() / ".config" / "movie_buddy"
     )
     supported_types: tuple[str, ...] = ("movie", "serial", "tvshow")
+    turso_database_url: str | None = field(
+        default_factory=lambda: os.environ.get("TURSO_DATABASE_URL"),
+    )
+    turso_auth_token: str | None = field(
+        default_factory=lambda: os.environ.get("TURSO_AUTH_TOKEN"),
+    )
+    openai_api_key: str | None = field(
+        default_factory=lambda: os.environ.get("OPENAI_API_KEY"),
+    )
 
     @property
     def token_file(self) -> Path:

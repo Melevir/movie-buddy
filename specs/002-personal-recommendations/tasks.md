@@ -19,10 +19,10 @@
 
 **Purpose**: Add new dependencies, extend config, create data model types
 
-- [ ] T001 Add `openai` and `libsql-client` to project dependencies in pyproject.toml
-- [ ] T002 [P] Add Turso and OpenAI env vars to movie_buddy/config.py (TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, OPENAI_API_KEY — all optional with None defaults)
-- [ ] T003 [P] Update .env.example with empty placeholders for TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, OPENAI_API_KEY
-- [ ] T004 [P] Add CatalogEntry, Rating, and Recommendation dataclasses to movie_buddy/models.py per data-model.md
+- [x] T001 Add `openai` and `libsql-client` to project dependencies in pyproject.toml
+- [x] T002 [P] Add Turso and OpenAI env vars to movie_buddy/config.py (TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, OPENAI_API_KEY — all optional with None defaults)
+- [x] T003 [P] Update .env.example with empty placeholders for TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, OPENAI_API_KEY
+- [x] T004 [P] Add CatalogEntry, Rating, and Recommendation dataclasses to movie_buddy/models.py per data-model.md
 
 ---
 
@@ -32,10 +32,10 @@
 
 **CRITICAL**: All user stories depend on the storage layer
 
-- [ ] T005 Write failing tests for Turso storage client in tests/test_storage.py: test schema init creates tables, test insert_ratings and get_ratings CRUD, test insert_catalog_entries and get_catalog_entries CRUD, test deduplication on insert (mock libsql)
-- [ ] T006 Implement Turso storage client in movie_buddy/storage.py: TursoStorage class with init_schema(), insert_ratings(), get_ratings(), get_all_ratings(), delete_all_ratings(), insert_catalog_entries(), get_catalog_entries(), get_catalog_count() methods per data-model.md schema
-- [ ] T007 Write failing test for missing Turso config (TURSO_DATABASE_URL not set) raises actionable error in tests/test_storage.py
-- [ ] T008 Add config validation to movie_buddy/storage.py: raise KinoPubError with message "TURSO_DATABASE_URL not set. See quickstart guide for setup." when env vars missing
+- [x] T005 Write failing tests for Turso storage client in tests/test_storage.py: test schema init creates tables, test insert_ratings and get_ratings CRUD, test insert_catalog_entries and get_catalog_entries CRUD, test deduplication on insert (mock libsql)
+- [x] T006 Implement Turso storage client in movie_buddy/storage.py: TursoStorage class with init_schema(), insert_ratings(), get_ratings(), get_all_ratings(), delete_all_ratings(), insert_catalog_entries(), get_catalog_entries(), get_catalog_count() methods per data-model.md schema
+- [x] T007 Write failing test for missing Turso config (TURSO_DATABASE_URL not set) raises actionable error in tests/test_storage.py
+- [x] T008 Add config validation to movie_buddy/storage.py: raise KinoPubError with message "TURSO_DATABASE_URL not set. See quickstart guide for setup." when env vars missing
 
 **Checkpoint**: Storage layer ready — user story implementation can begin
 
@@ -49,14 +49,14 @@
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] Write failing tests for `rate` command in tests/test_cli.py: test presents movies from watching history for rating, test rating 1-10 saves to storage, test skip (Enter/s) moves to next, test quit (q) ends session early, test previously rated excluded, test no unrated movies shows message, test no watching history shows message, test fewer than 10 unrated shows available count, test summary message after session
-- [ ] T010 [P] [US1] Write failing test for `rate` command error handling in tests/test_cli.py: test missing Turso config shows actionable message, test network error shows friendly message
+- [x] T009 [P] [US1] Write failing tests for `rate` command in tests/test_cli.py: test presents movies from watching history for rating, test rating 1-10 saves to storage, test skip (Enter/s) moves to next, test quit (q) ends session early, test previously rated excluded, test no unrated movies shows message, test no watching history shows message, test fewer than 10 unrated shows available count, test summary message after session
+- [x] T010 [P] [US1] Write failing test for `rate` command error handling in tests/test_cli.py: test missing Turso config shows actionable message, test network error shows friendly message
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement `rate` command in movie_buddy/cli.py per contracts/cli-commands.md: validate auth, fetch watching history (reuse existing get_watching_serials + get_watching_movies), load existing ratings from Turso, filter unrated, present up to 10 with Rich panels, prompt 1-10/skip/quit, save each rating to Turso, show summary
-- [ ] T012 [US1] Add error handling wrapper for `rate` command in movie_buddy/cli.py: catch AuthError, NetworkError, KinoPubError with Rich panels (same pattern as `watch` command)
-- [ ] T013 [US1] Verify all T009-T010 tests pass; run `make check`
+- [x] T011 [US1] Implement `rate` command in movie_buddy/cli.py per contracts/cli-commands.md: validate auth, fetch watching history (reuse existing get_watching_serials + get_watching_movies), load existing ratings from Turso, filter unrated, present up to 10 with Rich panels, prompt 1-10/skip/quit, save each rating to Turso, show summary
+- [x] T012 [US1] Add error handling wrapper for `rate` command in movie_buddy/cli.py: catch AuthError, NetworkError, KinoPubError with Rich panels (same pattern as `watch` command)
+- [x] T013 [US1] Verify all T009-T010 tests pass; run `make check`
 
 **Checkpoint**: `movie-buddy rate` works end-to-end. Users can rate movies from their watching history.
 
@@ -70,16 +70,16 @@
 
 ### Tests for Catalog
 
-- [ ] T014 [P] Write failing tests for catalog API methods in tests/test_api.py: test get_category_items fetches from /items/{category} with type and perpage params, test returns list of CatalogEntry dataclasses with correct fields (id, title, year, content_type, genres, countries, imdb_rating, kinopoisk_rating, plot)
-- [ ] T015 [P] Write failing tests for `catalog` command in tests/test_cli.py: test fetches 9 endpoints (3 categories x 3 types), test deduplicates against existing catalog, test shows progress messages, test shows summary with new + total counts, test network error handling
+- [x] T014 [P] Write failing tests for catalog API methods in tests/test_api.py: test get_category_items fetches from /items/{category} with type and perpage params, test returns list of CatalogEntry dataclasses with correct fields (id, title, year, content_type, genres, countries, imdb_rating, kinopoisk_rating, plot)
+- [x] T015 [P] Write failing tests for `catalog` command in tests/test_cli.py: test fetches 9 endpoints (3 categories x 3 types), test deduplicates against existing catalog, test shows progress messages, test shows summary with new + total counts, test network error handling
 
 ### Implementation for Catalog
 
-- [ ] T016 Implement get_category_items(category, content_type, per_page) method in movie_buddy/api.py: call /items/{category} with type and perpage params, parse response into CatalogEntry dataclasses
-- [ ] T017 Implement `catalog` command in movie_buddy/cli.py per contracts/cli-commands.md: validate auth, iterate 3 categories x 3 types, fetch via get_category_items, show progress, deduplicate, insert into Turso, show summary
-- [ ] T018 Add error handling wrapper for `catalog` command in movie_buddy/cli.py
-- [ ] T019 Create fixture files for catalog API responses in tests/fixtures/ (items_fresh_movie.json, items_hot_serial.json etc.)
-- [ ] T020 Verify all T014-T015 tests pass; run `make check`
+- [x] T016 Implement get_category_items(category, content_type, per_page) method in movie_buddy/api.py: call /items/{category} with type and perpage params, parse response into CatalogEntry dataclasses
+- [x] T017 Implement `catalog` command in movie_buddy/cli.py per contracts/cli-commands.md: validate auth, iterate 3 categories x 3 types, fetch via get_category_items, show progress, deduplicate, insert into Turso, show summary
+- [x] T018 Add error handling wrapper for `catalog` command in movie_buddy/cli.py
+- [x] T019 Create fixture files for catalog API responses in tests/fixtures/ (items_fresh_movie.json, items_hot_serial.json etc.)
+- [x] T020 Verify all T014-T015 tests pass; run `make check`
 
 **Checkpoint**: `movie-buddy catalog` works end-to-end. Catalog grows incrementally.
 

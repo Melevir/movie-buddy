@@ -3,9 +3,19 @@ from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
+from movie_buddy.cli import app
 from movie_buddy.config import config
 from movie_buddy.matcher import rank_results
-from movie_buddy.models import AuthError, Content, Episode, NetworkError, Season
+from movie_buddy.models import (
+    AuthError,
+    Content,
+    Episode,
+    KinoPubError,
+    NetworkError,
+    Rating,
+    Season,
+    WatchingItem,
+)
 
 
 def _make_content(item_id: int, title: str, content_type: str = "serial") -> Content:
@@ -215,3 +225,311 @@ class TestCLIErrorDisplay:
         mock_open.assert_called_once()
         url = mock_open.call_args[0][0]
         assert "s1e1" in url
+
+
+def _watching_items() -> list[WatchingItem]:
+    return [
+        WatchingItem(
+            id=1, title="Friends", content_type="serial", total=234, watched=50
+        ),
+        WatchingItem(
+            id=2, title="The Matrix", content_type="movie", total=1, watched=1
+        ),
+        WatchingItem(
+            id=3, title="Breaking Bad", content_type="serial", total=62, watched=62
+        ),
+    ]
+
+
+def _mock_storage(rated_ids: set[int] | None = None):
+    storage = MagicMock()
+    storage.get_rated_content_ids.return_value = rated_ids or set()
+    storage.get_all_ratings.return_value = []
+    storage.get_catalog_count.return_value = 0
+    return storage
+
+
+def _patch_rate_deps(
+    watching: list[WatchingItem] | None = None,
+    storage: MagicMock | None = None,
+):
+    """Return a context manager patching auth, client, and storage for rate tests."""
+    import contextlib
+
+    @contextlib.contextmanager
+    def _ctx():
+        with (
+            patch("movie_buddy.cli.KinoPubAuth") as mock_auth_cls,
+            patch("movie_buddy.cli.KinoPubClient") as mock_client_cls,
+            patch("movie_buddy.cli.TursoStorage") as mock_storage_cls,
+        ):
+            mock_auth = mock_auth_cls.return_value
+            mock_auth.ensure_valid_token.return_value = MagicMock()
+            mock_client = mock_client_cls.return_value
+            mock_client.get_watching_serials.return_value = [
+                w for w in (watching or []) if w.content_type != "movie"
+            ]
+            mock_client.get_watching_movies.return_value = [
+                w for w in (watching or []) if w.content_type == "movie"
+            ]
+            mock_storage_cls.return_value = storage or _mock_storage()
+            store = mock_storage_cls.return_value
+            store.init_schema.return_value = None
+            yield mock_client, store
+
+    return _ctx()
+
+
+class TestRateCommand:
+    def test_presents_movies_from_watching_history(self) -> None:
+        runner = CliRunner()
+        # Provide "q" to quit after seeing first item
+        with _patch_rate_deps(watching=_watching_items()) as (client, store):
+            result = runner.invoke(app, ["rate"], input="q\n")
+        assert result.exit_code == 0
+        assert "Friends" in result.output
+
+    def test_rating_saves_to_storage(self) -> None:
+        runner = CliRunner()
+        items = [
+            WatchingItem(
+                id=1, title="Friends", content_type="serial", total=10, watched=5
+            )
+        ]
+        with _patch_rate_deps(watching=items) as (client, store):
+            result = runner.invoke(app, ["rate"], input="8\n")
+        assert result.exit_code == 0
+        store.insert_ratings.assert_called_once()
+        saved_rating = store.insert_ratings.call_args[0][0][0]
+        assert saved_rating.score == 8
+        assert saved_rating.content_id == 1
+
+    def test_skip_moves_to_next(self) -> None:
+        runner = CliRunner()
+        items = [
+            WatchingItem(
+                id=1, title="Friends", content_type="serial", total=10, watched=5
+            ),
+            WatchingItem(
+                id=2, title="Matrix", content_type="movie", total=1, watched=1
+            ),
+        ]
+        with _patch_rate_deps(watching=items) as (client, store):
+            # Skip first, rate second, then done
+            result = runner.invoke(app, ["rate"], input="\n9\n")
+        assert result.exit_code == 0
+        store.insert_ratings.assert_called_once()
+        saved = store.insert_ratings.call_args[0][0][0]
+        assert saved.content_id == 2
+
+    def test_quit_ends_session_early(self) -> None:
+        runner = CliRunner()
+        with _patch_rate_deps(watching=_watching_items()) as (client, store):
+            result = runner.invoke(app, ["rate"], input="q\n")
+        assert result.exit_code == 0
+        store.insert_ratings.assert_not_called()
+
+    def test_previously_rated_excluded(self) -> None:
+        runner = CliRunner()
+        storage = _mock_storage(rated_ids={1, 2})
+        items = _watching_items()  # ids 1, 2, 3
+        with _patch_rate_deps(watching=items, storage=storage) as (client, store):
+            result = runner.invoke(app, ["rate"], input="7\n")
+        assert result.exit_code == 0
+        # Only item 3 (Breaking Bad) should be presented
+        assert "Breaking Bad" in result.output
+        assert "Friends" not in result.output.split("Rated")[0]
+
+    def test_no_unrated_movies_shows_message(self) -> None:
+        runner = CliRunner()
+        storage = _mock_storage(rated_ids={1, 2, 3})
+        with _patch_rate_deps(watching=_watching_items(), storage=storage) as (
+            client,
+            store,
+        ):
+            result = runner.invoke(app, ["rate"])
+        assert result.exit_code == 0
+        assert (
+            "no more" in result.output.lower() or "watch more" in result.output.lower()
+        )
+
+    def test_no_watching_history_shows_message(self) -> None:
+        runner = CliRunner()
+        with _patch_rate_deps(watching=[]) as (client, store):
+            result = runner.invoke(app, ["rate"])
+        assert result.exit_code == 0
+        assert (
+            "no more" in result.output.lower() or "watch more" in result.output.lower()
+        )
+
+    def test_summary_message_after_session(self) -> None:
+        runner = CliRunner()
+        items = [
+            WatchingItem(
+                id=1, title="Friends", content_type="serial", total=10, watched=5
+            )
+        ]
+        storage = _mock_storage()
+        storage.get_all_ratings.return_value = [
+            Rating(
+                content_id=1,
+                title="Friends",
+                content_type="serial",
+                score=8,
+                rated_at="2026-01-01",
+            ),
+        ]
+        with _patch_rate_deps(watching=items, storage=storage) as (client, store):
+            result = runner.invoke(app, ["rate"], input="8\n")
+        assert result.exit_code == 0
+        assert "rated" in result.output.lower()
+
+
+class TestRateErrorHandling:
+    def test_missing_turso_config_shows_message(self) -> None:
+        runner = CliRunner()
+        with (
+            patch("movie_buddy.cli.KinoPubAuth") as mock_auth_cls,
+            patch("movie_buddy.cli.KinoPubClient"),
+            patch("movie_buddy.cli.TursoStorage") as mock_storage_cls,
+        ):
+            mock_auth = mock_auth_cls.return_value
+            mock_auth.ensure_valid_token.return_value = MagicMock()
+            mock_storage_cls.side_effect = KinoPubError("TURSO_DATABASE_URL not set")
+            result = runner.invoke(app, ["rate"])
+        assert result.exit_code == 1
+        assert "turso" in result.output.lower() or "error" in result.output.lower()
+
+    def test_network_error_shows_friendly_message(self) -> None:
+        runner = CliRunner()
+        with (
+            patch("movie_buddy.cli.KinoPubAuth") as mock_auth_cls,
+            patch("movie_buddy.cli.KinoPubClient") as mock_client_cls,
+            patch("movie_buddy.cli.TursoStorage") as mock_storage_cls,
+        ):
+            mock_auth = mock_auth_cls.return_value
+            mock_auth.ensure_valid_token.return_value = MagicMock()
+            mock_storage_cls.return_value = _mock_storage()
+            mock_storage_cls.return_value.init_schema.return_value = None
+            mock_client = mock_client_cls.return_value
+            mock_client.get_watching_serials.side_effect = NetworkError(
+                "Unable to reach kino.pub"
+            )
+            result = runner.invoke(app, ["rate"])
+        assert result.exit_code == 1
+        assert "network" in result.output.lower() or "unable" in result.output.lower()
+
+
+def _mock_catalog_entries():
+    from movie_buddy.models import CatalogEntry
+
+    return [
+        CatalogEntry(
+            id=501,
+            title="Movie A",
+            year=2026,
+            content_type="movie",
+            genres=["Drama"],
+            countries=["USA"],
+            imdb_rating=7.5,
+            kinopoisk_rating=7.0,
+            plot="Plot A",
+            created_at="2026-01-01",
+        ),
+        CatalogEntry(
+            id=502,
+            title="Movie B",
+            year=2025,
+            content_type="movie",
+            genres=["Comedy"],
+            countries=["USA"],
+            imdb_rating=6.8,
+            kinopoisk_rating=None,
+            plot="Plot B",
+            created_at="2026-01-01",
+        ),
+    ]
+
+
+def _patch_catalog_deps(
+    category_items: list | None = None,
+    storage: MagicMock | None = None,
+):
+    import contextlib
+
+    @contextlib.contextmanager
+    def _ctx():
+        with (
+            patch("movie_buddy.cli.KinoPubAuth") as mock_auth_cls,
+            patch("movie_buddy.cli.KinoPubClient") as mock_client_cls,
+            patch("movie_buddy.cli.TursoStorage") as mock_storage_cls,
+        ):
+            mock_auth = mock_auth_cls.return_value
+            mock_auth.ensure_valid_token.return_value = MagicMock()
+            mock_client = mock_client_cls.return_value
+            mock_client.get_category_items.return_value = (
+                category_items if category_items is not None else []
+            )
+            store = storage or _mock_storage()
+            store.init_schema.return_value = None
+            mock_storage_cls.return_value = store
+            yield mock_client, store
+
+    return _ctx()
+
+
+class TestCatalogCommand:
+    def test_fetches_9_endpoints(self) -> None:
+        runner = CliRunner()
+        with _patch_catalog_deps(category_items=[]) as (client, store):
+            result = runner.invoke(app, ["catalog"])
+        assert result.exit_code == 0
+        assert client.get_category_items.call_count == 9
+
+    def test_deduplicates_against_existing(self) -> None:
+        runner = CliRunner()
+        entries = _mock_catalog_entries()
+        storage = _mock_storage()
+        storage.get_existing_catalog_ids.return_value = {501}
+        with _patch_catalog_deps(category_items=entries, storage=storage) as (
+            client,
+            store,
+        ):
+            result = runner.invoke(app, ["catalog"])
+        assert result.exit_code == 0
+        # Should have been called to insert — the dedup filters in the command
+        store.insert_catalog_entries.assert_called()
+
+    def test_shows_summary_with_counts(self) -> None:
+        runner = CliRunner()
+        entries = _mock_catalog_entries()
+        storage = _mock_storage()
+        storage.get_existing_catalog_ids.return_value = set()
+        storage.get_catalog_count.return_value = 18
+        with _patch_catalog_deps(category_items=entries, storage=storage) as (
+            client,
+            store,
+        ):
+            result = runner.invoke(app, ["catalog"])
+        assert result.exit_code == 0
+        assert "catalog" in result.output.lower() or "updated" in result.output.lower()
+
+    def test_network_error_handling(self) -> None:
+        runner = CliRunner()
+        with (
+            patch("movie_buddy.cli.KinoPubAuth") as mock_auth_cls,
+            patch("movie_buddy.cli.KinoPubClient") as mock_client_cls,
+            patch("movie_buddy.cli.TursoStorage") as mock_storage_cls,
+        ):
+            mock_auth = mock_auth_cls.return_value
+            mock_auth.ensure_valid_token.return_value = MagicMock()
+            store = _mock_storage()
+            store.init_schema.return_value = None
+            mock_storage_cls.return_value = store
+            mock_client = mock_client_cls.return_value
+            mock_client.get_category_items.side_effect = NetworkError(
+                "Unable to reach kino.pub"
+            )
+            result = runner.invoke(app, ["catalog"])
+        assert result.exit_code == 1
+        assert "network" in result.output.lower() or "unable" in result.output.lower()
