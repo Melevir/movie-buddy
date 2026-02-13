@@ -11,7 +11,13 @@ from movie_buddy.api import KinoPubClient
 from movie_buddy.auth import KinoPubAuth
 from movie_buddy.browser import open_in_chrome
 from movie_buddy.matcher import rank_results
-from movie_buddy.models import AuthTimeoutError, Content
+from movie_buddy.models import (
+    AuthError,
+    AuthTimeoutError,
+    Content,
+    KinoPubError,
+    NetworkError,
+)
 
 app = typer.Typer(name="movie-buddy", help="Open random episodes on kino.pub")
 console = Console()
@@ -27,7 +33,11 @@ TYPE_LABELS: dict[str, str] = {
 def auth(
     force: bool = typer.Option(False, help="Re-authenticate even if token exists"),
 ) -> None:
-    """Authenticate with kino.pub via OAuth2 Device Flow."""
+    """Authenticate with kino.pub via OAuth2 Device Flow.
+
+    Example: movie-buddy auth
+    Example: movie-buddy auth --force
+    """
     kinopub_auth = KinoPubAuth()
 
     if not force:
@@ -109,7 +119,44 @@ def _prompt_picker(results: list[Content]) -> Content:
 def watch(
     name: str = typer.Argument(help="Movie or series name to search for"),
 ) -> None:
-    """Open a random episode of a series (or movie page) in Chrome."""
+    """Open a random episode of a series (or movie page) in Chrome.
+
+    Example: movie-buddy watch "Friends"
+    Example: movie-buddy watch "The Matrix"
+    """
+    try:
+        _watch_impl(name)
+    except AuthError as e:
+        console.print(
+            Panel(
+                f"[red]Authentication required.[/red]\n"
+                f"Please run [bold]movie-buddy auth[/bold] to authenticate.\n"
+                f"Details: {e}",
+                title="Auth Error",
+            )
+        )
+        raise typer.Exit(code=1) from None
+    except NetworkError as e:
+        console.print(
+            Panel(
+                f"[red]Unable to reach kino.pub.[/red]\n"
+                f"Check your internet connection and try again.\n"
+                f"Details: {e}",
+                title="Network Error",
+            )
+        )
+        raise typer.Exit(code=1) from None
+    except KinoPubError as e:
+        console.print(
+            Panel(
+                f"[red]An error occurred:[/red] {e}",
+                title="Error",
+            )
+        )
+        raise typer.Exit(code=1) from None
+
+
+def _watch_impl(name: str) -> None:
     kinopub_auth = KinoPubAuth()
     token = kinopub_auth.ensure_valid_token()
     client = KinoPubClient(token)
