@@ -3,6 +3,8 @@
 ## Active Technologies
 
 - Python 3.13+, Typer (CLI), httpx (HTTP), Rich (terminal UX), cryptography (token encryption), python-dotenv (env config)
+- New in 002: openai (LLM recommendations), libsql-client (Turso remote storage)
+- Storage: Turso (cloud-hosted SQLite via libSQL) — ratings + catalog tables
 - Testing: pytest + pytest-httpx
 - Linting: ruff (format + check, strict ruleset), mypy (strict mode)
 
@@ -53,6 +55,7 @@ make clean         # remove caches
 - No unnecessary docstrings — only keep functional ones (e.g. Typer help strings)
 - Full type annotations on all public functions
 - Config via dataclass + env vars, no hardcoded secrets in source
+- **No secrets in version control**: All API keys, tokens, and credentials MUST live in `.env` (gitignored). Never commit secret values to source files, docs, fixtures, or config. Use `.env.example` with empty placeholders only.
 
 ## Constitution
 
@@ -67,6 +70,15 @@ CLI tool to search kino.pub, pick random episode, open in Chrome.
 API details: `specs/001-random-episode/api-research.md`
 Spec: `specs/001-random-episode/spec.md`
 Plan: `specs/001-random-episode/plan.md`
+
+## Feature: 002-personal-recommendations
+
+User ratings + LLM-powered personalized recommendations.
+New commands: `rate`, `recommend`, `catalog`, `ratings`.
+Storage: Turso (cloud SQLite). LLM: OpenAI GPT-4o-mini.
+Spec: `specs/002-personal-recommendations/spec.md`
+Plan: `specs/002-personal-recommendations/plan.md`
+Research: `specs/002-personal-recommendations/research.md`
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
