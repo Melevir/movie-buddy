@@ -5,14 +5,22 @@ import random
 import typer
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 
 from movie_buddy.api import KinoPubClient
 from movie_buddy.auth import KinoPubAuth
 from movie_buddy.browser import open_in_chrome
-from movie_buddy.models import AuthTimeoutError
+from movie_buddy.matcher import rank_results
+from movie_buddy.models import AuthTimeoutError, Content
 
 app = typer.Typer(name="movie-buddy", help="Open random episodes on kino.pub")
 console = Console()
+
+TYPE_LABELS: dict[str, str] = {
+    "serial": "Series",
+    "tvshow": "TV Show",
+    "movie": "Movie",
+}
 
 
 @app.command()
@@ -58,6 +66,45 @@ def auth(
     console.print("[green]Authenticated successfully![/green]")
 
 
+def _fetch_activity_ids(client: KinoPubClient) -> tuple[set[int], set[int]]:
+    watching_ids: set[int] = set()
+    bookmark_ids: set[int] = set()
+
+    for item in client.get_watching_serials():
+        watching_ids.add(item.id)
+    for item in client.get_watching_movies():
+        watching_ids.add(item.id)
+
+    for folder in client.get_bookmark_folders():
+        for item_id in client.get_bookmark_items(folder.id):
+            bookmark_ids.add(item_id)
+
+    return watching_ids, bookmark_ids
+
+
+def _prompt_picker(results: list[Content]) -> Content:
+    top = results[:5]
+    table = Table(title="Multiple results found")
+    table.add_column("#", style="bold")
+    table.add_column("Title")
+    table.add_column("Type")
+    table.add_column("Year")
+    for i, item in enumerate(top, 1):
+        table.add_row(
+            str(i),
+            item.title,
+            TYPE_LABELS.get(item.content_type, item.content_type),
+            str(item.year),
+        )
+    console.print(table)
+
+    while True:
+        choice = console.input(f"Pick a number (1-{len(top)}): ")
+        if choice.isdigit() and 1 <= int(choice) <= len(top):
+            return top[int(choice) - 1]
+        console.print(f"[red]Enter a number between 1 and {len(top)}.[/red]")
+
+
 @app.command()
 def watch(
     name: str = typer.Argument(help="Movie or series name to search for"),
@@ -76,8 +123,26 @@ def watch(
         )
         raise typer.Exit(code=1)
 
-    selected = results[0]
+    selected: Content
+    if len(results) == 1:
+        selected = results[0]
+    else:
+        with console.status("Checking your activity..."):
+            watching_ids, bookmark_ids = _fetch_activity_ids(client)
 
+        matched, reason = rank_results(
+            results, watching_ids=watching_ids, bookmark_ids=bookmark_ids
+        )
+        if matched is not None and reason is not None:
+            console.print(f"[cyan]Auto-selected: {reason}[/cyan]")
+            selected = matched
+        else:
+            selected = _prompt_picker(results)
+
+    _open_content(client, selected)
+
+
+def _open_content(client: KinoPubClient, selected: Content) -> None:
     if selected.content_type == "movie":
         url = selected.build_watch_url()
         console.print(

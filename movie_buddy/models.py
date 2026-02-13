@@ -92,3 +92,18 @@ class Content:
         return (
             f"{config.web_base_url}/{self.id}/s{episode.season_number}e{episode.number}"
         )
+
+
+@dataclass
+class WatchingItem:
+    id: int
+    title: str
+    content_type: str
+    total: int
+    watched: int
+
+
+@dataclass
+class BookmarkFolder:
+    id: int
+    title: str

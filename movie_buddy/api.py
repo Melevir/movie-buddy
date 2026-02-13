@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import httpx
 
 from movie_buddy.config import config as default_config
-from movie_buddy.models import Content, Episode, Season
+from movie_buddy.models import BookmarkFolder, Content, Episode, Season, WatchingItem
 
 if TYPE_CHECKING:
     from movie_buddy.config import Config
@@ -65,3 +65,36 @@ class KinoPubClient:
             year=item.get("year", 0),
             seasons=seasons,
         )
+
+    def _parse_watching(self, endpoint: str) -> list[WatchingItem]:
+        response = self._client.get(endpoint)
+        response.raise_for_status()
+        return [
+            WatchingItem(
+                id=item["id"],
+                title=item["title"],
+                content_type=item["type"],
+                total=item.get("total", 0),
+                watched=item.get("watched", 0),
+            )
+            for item in response.json().get("items", [])
+        ]
+
+    def get_watching_serials(self) -> list[WatchingItem]:
+        return self._parse_watching("/watching/serials")
+
+    def get_watching_movies(self) -> list[WatchingItem]:
+        return self._parse_watching("/watching/movies")
+
+    def get_bookmark_folders(self) -> list[BookmarkFolder]:
+        response = self._client.get("/bookmarks")
+        response.raise_for_status()
+        return [
+            BookmarkFolder(id=item["id"], title=item["title"])
+            for item in response.json().get("items", [])
+        ]
+
+    def get_bookmark_items(self, folder_id: int) -> list[int]:
+        response = self._client.get(f"/bookmarks/{folder_id}")
+        response.raise_for_status()
+        return [item["id"] for item in response.json().get("items", [])]

@@ -74,3 +74,58 @@ class TestGetItem:
         assert content.seasons[0].episodes[0].season_number == 1
         assert content.seasons[1].number == 2
         assert len(content.seasons[1].episodes) == 1
+
+
+class TestWatching:
+    def test_get_watching_serials(
+        self, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        data = json.loads((FIXTURES / "watching_serials.json").read_text())
+        httpx_mock.add_response(
+            url=f"{config.api_base_url}/watching/serials",
+            json=data,
+        )
+        items = client.get_watching_serials()
+        assert len(items) == 2
+        assert items[0].id == 8894
+        assert items[0].title == "Друзья / Friends"
+        assert items[0].content_type == "serial"
+        assert items[0].total == 234
+        assert items[0].watched == 50
+
+    def test_get_watching_movies(
+        self, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        data = json.loads((FIXTURES / "watching_movies.json").read_text())
+        httpx_mock.add_response(
+            url=f"{config.api_base_url}/watching/movies",
+            json=data,
+        )
+        items = client.get_watching_movies()
+        assert items == []
+
+
+class TestBookmarks:
+    def test_get_bookmark_folders(
+        self, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        data = json.loads((FIXTURES / "bookmarks.json").read_text())
+        httpx_mock.add_response(
+            url=f"{config.api_base_url}/bookmarks",
+            json=data,
+        )
+        folders = client.get_bookmark_folders()
+        assert len(folders) == 1
+        assert folders[0].id == 2576791
+        assert folders[0].title == "Буду смотреть"
+
+    def test_get_bookmark_items(
+        self, client: KinoPubClient, httpx_mock: HTTPXMock
+    ) -> None:
+        data = json.loads((FIXTURES / "bookmark_items.json").read_text())
+        httpx_mock.add_response(
+            url=f"{config.api_base_url}/bookmarks/2576791",
+            json=data,
+        )
+        item_ids = client.get_bookmark_items(2576791)
+        assert item_ids == [110440, 555]
